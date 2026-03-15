@@ -108,8 +108,8 @@ I tested it on Windows 11 and Ubuntu 25.04, but it should work on any operating 
 
 ## AI Assistance
 I used AI Autocomplete from the GitHub Copilot plugin for PyCharm. I wrote this readme myself, but asked Copilot in the end on what I
-could improve. It suggested some changes, from which I applied some. There are parts in the script which are entirely written by AI, I only
-asked it to give me ideas on how to fix some problems, if I had been stuck. 
+could improve. It suggested some changes, from which I applied some. There are no parts in the script which are entirely written by AI, I only
+asked it to give me ideas on how to fix some problems, if I had been stuck. (I needed this section for hackclub)
 
 ## Disclaimer
 This script does not constitute legal advice. Copyright laws and digital rights
