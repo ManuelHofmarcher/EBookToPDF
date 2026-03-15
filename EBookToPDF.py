@@ -1,5 +1,6 @@
 import os
 from time import sleep
+from getpass import getpass
 
 from selenium.webdriver import Keys, ActionChains
 from selenium.webdriver.chrome.options import Options
@@ -22,6 +23,57 @@ loading_time_between_pages = 0.5
 bookname = "book.pdf"
 
 
+def _ts():
+    return datetime.now().strftime("%H:%M:%S")
+
+
+def _color(text, code):
+    return f"\033[{code}m{text}\033[0m"
+
+
+def ui_info(message):
+    print(f"{_color(f'[{_ts()}]', '90')} {_color('[INFO]', '36')} {message}")
+
+
+def ui_success(message):
+    print(f"{_color(f'[{_ts()}]', '90')} {_color('[ OK ]', '32')} {message}")
+
+
+def ui_warn(message):
+    print(f"{_color(f'[{_ts()}]', '90')} {_color('[WARN]', '33')} {message}")
+
+
+def ui_error(message):
+    print(f"{_color(f'[{_ts()}]', '90')} {_color('[ERR ]', '31')} {message}")
+
+
+def ui_section(title):
+    line = "=" * 72
+    print(f"\n{_color(line, '90')}")
+    print(f"{_color(title, '96')}")
+    print(f"{_color(line, '90')}")
+
+
+def ui_prompt(label):
+    return input(f"{_color(f'[{_ts()}]', '90')} {_color('[IN ]', '35')} {label}: ")
+
+
+def print_books_menu(title, books):
+    ui_section(title)
+    for index, book in enumerate(books):
+        print(f"{_color(f'[{index:>2}]', '94')} {book}")
+
+
+def print_banner():
+    banner_path = os.path.join("assets", "ascii_art", "EBookToPDF.txt")
+    try:
+        with open(banner_path, "r", encoding="utf-8") as f:
+            banner = f.read().rstrip("\n")
+        print(_color(banner, "96"))
+    except OSError:
+        print(_color("EBookToPDF", "96"))
+
+
 def login(browser):
     """
     Logs the user into the digi4school.at website, by asking the user for their credentials.
@@ -31,8 +83,9 @@ def login(browser):
     email_field = browser.find_element(By.XPATH, "//*[@id=\"ion-input-0\"]")
     passwd_field = browser.find_element(By.XPATH, "//*[@id=\"ion-input-1\"]")
 
-    email = input(datetime.now().strftime("%H:%M:%S") + " Email: ")
-    passwd = input(datetime.now().strftime("%H:%M:%S") + " Password: ")
+    ui_section("Login")
+    email = ui_prompt("Email")
+    passwd = getpass(f"{_color(f'[{_ts()}]', '90')} {_color('[IN ]', '35')} Password: ")
 
     # email = "dgcvbcvbmamamammmawasefsefsefsefsefesfsefsecom"  # for testing purposes, changed my email before every commit :)
     # passwd = "sergdhfgrewae"
@@ -50,7 +103,7 @@ def login(browser):
     sleep(loading_time_between_pages + 1)
 
     if element_exists(By.XPATH, "//*[@id=\"ion-input-0\"]", browser):
-        print(datetime.now().strftime("%H:%M:%S") + " Login failed")
+        ui_error("Login failed")
         sleep(loading_time_between_pages)
         browser.find_element(By.CLASS_NAME, "alert-button").click()
         login(browser)
@@ -103,23 +156,19 @@ def book_selection(browser, book_names, book_elements):
     global bookname
     global mode_all
 
-    for book in book_names:
-        print("[" + str(book_names.index(book)) + "] " + book)
-        # print([ord(c) for c in book])
-
-    selected_book = input(
-        datetime.now().strftime("%H:%M:%S") + " Select a book (enter 'all' to convert all owned books): ")
+    print_books_menu("Available books", book_names)
+    selected_book = ui_prompt("Select a book index (or 'all' for all books)")
 
     if selected_book.lower() == 'all':
         mode_all = True
-        print(datetime.now().strftime("%H:%M:%S") + " Selected mode: all books")
+        ui_info("Selected mode: all books")
         save_all_books_as_pdf(browser, book_elements)
         return 0
 
     try:
         selected_book = book_names[int(selected_book)]
     except (ValueError, IndexError):
-        print(datetime.now().strftime("%H:%M:%S") + " Book not found")
+        ui_warn("Book not found")
         return -1
 
     book_elements[book_names.index(selected_book)].click()
@@ -127,7 +176,7 @@ def book_selection(browser, book_names, book_elements):
     sleep(loading_time_between_pages)
     browser.switch_to.window(browser.window_handles[-1])
 
-    print(datetime.now().strftime("%H:%M:%S") + f" Selected book: {selected_book}")
+    ui_success(f"Selected book: {selected_book}")
     return 0
 
 
@@ -149,15 +198,14 @@ def sub_book_selection(browser):
         if book_element.text:  # cause for some reason there are hundres of "tx" elements with no text
             books.append((book_element.text, book_element))
 
-    for index, (book_title, _) in enumerate(books):
-        print(f"[{index}] {book_title}")
+    print_books_menu("Available sub-books", [title for title, _ in books])
 
-    selected_book = input(datetime.now().strftime("%H:%M:%S") + " Select a sub book: ")
+    selected_book = ui_prompt("Select a sub-book index")
 
     try:
         selected_book_text, selected_book_element = books[int(selected_book)]
     except (ValueError, IndexError):
-        print(datetime.now().strftime("%H:%M:%S") + " This sub book does not exist")
+        ui_warn("This sub-book does not exist")
         return -1
 
     selected_book_element.click()
@@ -165,7 +213,7 @@ def sub_book_selection(browser):
     sleep(loading_time_between_pages)
     browser.switch_to.window(browser.window_handles[-1])
 
-    print(datetime.now().strftime("%H:%M:%S") + f" Selected sub book: {selected_book_text}")
+    ui_success(f"Selected sub-book: {selected_book_text}")
 
     return 0
 
@@ -592,49 +640,19 @@ def main():
         wait = WebDriverWait(browser, 15)
         sleep(5)  # to avoid the warning obstructing the input()
 
-        print("""  
-                   ███████╗██████╗  ██████╗  ██████╗ ██╗  ██╗                                    
-                   ██╔════╝██╔══██╗██╔═══██╗██╔═══██╗██║ ██╔╝                                     
-                   █████╗  ██████╔╝██║   ██║██║   ██║█████╔╝                                     
-                   ██╔══╝  ██╔══██╗██║   ██║██║   ██║██╔═██╗                                      
-                   ███████╗██████╔╝╚██████╔╝╚██████╔╝██║  ██╗                                     
-                   ╚══════╝╚═════╝  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝                             
-                           XX                                                      
-                         XXXX                                                      
-                        XXXX                ███████████  ██████████   ███████████  
-                       XXXX        XXX      ░░███░░░░░███░░███░░░░███ ░░███░░░░░░█ 
-                      XXXX        XXXXX      ░███    ░███ ░███   ░░███ ░███   █ ░  
-                     XXXXXX        XXXXX     ░██████████  ░███    ░███ ░███████    
-                    XXXXXXXXXXXXXXXXXXXXX    ░███░░░░░░   ░███    ░███ ░███░░░█    
-                     XXXXXXXXXXXXXXXXXXXX    ░███         ░███    ███  ░███  ░     
-                                   XXXXX     █████        ██████████   █████       
-                                  XXXXX     ░░░░░        ░░░░░░░░░░   ░░░░░        
-                                   XXX                                             """)
-
-        print("""                                                  
-                ██╗    ██╗██╗  ██╗██████╗ ██████╗ ██╗     ███████╗██████╗ 
-                ██║    ██║██║  ██║██╔══██╗██╔══██╗██║     ██╔════╝██╔══██╗
-                ██║ █╗ ██║███████║██████╔╝██████╔╝██║     █████╗  ██████╔╝
-                ██║███╗██║╚════██║██╔═══╝ ██╔═══╝ ██║     ██╔══╝  ██╔══██╗
-                ╚███╔███╔╝     ██║██║     ██║     ███████╗███████╗██║  ██║
-                 ╚══╝╚══╝      ╚═╝╚═╝     ╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝
-
-            """)
+        print_banner()
+        ui_section("Session setup")
+        ui_info("Tip: Increase page wait time if pages or popups load slowly.")
 
         while True:
-            user_input = input(
-                datetime.now().strftime(
-                    "%H:%M:%S") + " Enter loading time between pages in seconds. By default this is set to 0.5. If you have \n"
-                                  "a slower internet connection, you may prefer a higher value. If the \"next page\" pop ups on each \n"
-                                  "page annoy you, you may also prefer a higher value. \n"
-                                  "Seconds: ")
+            user_input = ui_prompt("Loading time between pages in seconds (default: 0.5)")
             if user_input == "":
                 break
             try:
                 loading_time_between_pages = float(user_input)
                 break
             except ValueError:
-                print(datetime.now().strftime("%H:%M:%S") + " Please enter a valid number.")
+                ui_warn("Please enter a valid number.")
 
         browser.get("https://digi4school.at/overview")
 
@@ -649,11 +667,11 @@ def main():
         book_names, book_elements = get_books(browser)
 
         while book_selection(browser, book_names, book_elements) != 0:
-            print(datetime.now().strftime("%H:%M:%S") + " Please select a valid book.")
+            ui_warn("Please select a valid book.")
 
         if mode_all:
-            print(datetime.now().strftime("%H:%M:%S") + " Finished saving all books. Press Enter to exit.")
-            input()
+            ui_success("Finished saving all books.")
+            ui_prompt("Press Enter to exit")
             return
 
         sleep(loading_time_between_pages + 1)
@@ -661,9 +679,9 @@ def main():
             browser)  # 0 -> sub_books, 1 -> Digi4School book (hpthek and digibox books are also compatible), 2 -> scook, 3 -> bibox, None -> unknown book type
 
         if book_type == 0:
-            print(datetime.now().strftime("%H:%M:%S") + " sub_books detected.")
+            ui_info("Sub-books detected.")
             while sub_book_selection(browser) != 0:
-                print(datetime.now().strftime("%H:%M:%S") + " Please select a valid sub_book.")
+                ui_warn("Please select a valid sub-book.")
 
             sleep(loading_time_between_pages + 1)
             book_type = check_book_type(browser)
@@ -678,15 +696,13 @@ def main():
             print(datetime.now().strftime("%H:%M:%S") + " BiBox book detected.")
             save_book_as_pdf_bibox(browser)
         else:
-            print(datetime.now().strftime("%H:%M:%S") + " Unknown book type detected.")
-            print(datetime.now().strftime(
-                "%H:%M:%S") + " This issue could also be caused when a page takes too long to load, try increasing the loading time between pages.")
-            print(datetime.now().strftime("%H:%M:%S") + " Exiting...")
+            ui_error("Unknown book type detected.")
+            ui_info("This can happen when loading is too slow. Try a higher page wait time and retry.")
+            ui_info("Exiting...")
             sleep(1)
             return
 
-        print("Press Enter to exit")
-        input()
+        ui_prompt("Press Enter to exit")
 
 
 if __name__ == '__main__':
