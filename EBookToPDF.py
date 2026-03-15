@@ -142,29 +142,30 @@ def sub_book_selection(browser):
     """
     global bookname
     book_elements = browser.find_elements(By.CLASS_NAME, "tx")
-    books = list()
+    books = []
 
+    # Keep text and element paired so displayed index always maps to the correct clickable element.
     for book_element in book_elements:
         if book_element.text:  # cause for some reason there are hundres of "tx" elements with no text
-            books.append(book_element.text)
+            books.append((book_element.text, book_element))
 
-    for book in books:
-        print("[" + str(books.index(book)) + "] " + book)
+    for index, (book_title, _) in enumerate(books):
+        print(f"[{index}] {book_title}")
 
     selected_book = input(datetime.now().strftime("%H:%M:%S") + " Select a sub book: ")
 
     try:
-        selected_book = books[int(selected_book)]
+        selected_book_text, selected_book_element = books[int(selected_book)]
     except (ValueError, IndexError):
         print(datetime.now().strftime("%H:%M:%S") + " This sub book does not exist")
         return -1
 
-    book_elements[books.index(selected_book)].click()
-    bookname = os.path.join(bookname, selected_book.replace("/", "_"))
+    selected_book_element.click()
+    bookname = os.path.join(bookname, selected_book_text.replace("/", "_"))
     sleep(loading_time_between_pages)
     browser.switch_to.window(browser.window_handles[-1])
 
-    print(datetime.now().strftime("%H:%M:%S") + f" Selected sub book: {selected_book}")
+    print(datetime.now().strftime("%H:%M:%S") + f" Selected sub book: {selected_book_text}")
 
     return 0
 
