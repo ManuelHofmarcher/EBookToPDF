@@ -69,7 +69,8 @@ For further information on how a conversion is handled, please refer to the illu
 
 *   Python 3.12.10
 *   Google Chrome
-    * Chrome download for [Linux](https://www.google.com/intl/en_uk/chrome/?platform=linux) and [Windows](https://www.google.com/chrome/)
+    * Chrome download for [Linux](https://www.google.com/intl/en_uk/chrome/?platform=linux) and [Windows](https://www.google.com/chrome/) (Alternativley you can also use Chromium)
+    * If you want to run the program on Linux, be sure that you do not have a sandboxed variant (snapd or flathub) of Chrome/Chromium, since the python script wont be able to use them. Note that if you are on Ubuntu, you can still have the sandboxed version even though you used apt since apt sometimes downloads snap packages without notifying the user about it.
 *   The Python packages listed in `requirements.txt`.
 
 ## Installation
